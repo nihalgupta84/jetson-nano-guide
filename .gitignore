@@ -1,0 +1,28 @@
+# Model binaries
+*.gguf
+*.bin
+models/downloads/
+
+# Build trees and external sources
+build/
+build-*/
+llama.cpp/
+gcc-*/
+cmake-*/
+*.tar.gz
+*.tar.xz
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Secrets and local state
+.env
+*.pem
+*.key
+auth.json
+
+# Benchmark raw artifacts
+benchmarks/raw/

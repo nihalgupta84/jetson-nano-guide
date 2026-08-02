@@ -1,0 +1,24 @@
+Verified success markers from the initial setup:
+
+CUDA device detection:
+  Device 0: NVIDIA Tegra X1, compute capability 5.3, VMM: no
+
+llama.cpp revision:
+  version 5050, commit 23106f94e
+
+CUDA library linkage:
+  libggml-cuda.so
+  libcudart.so.10.2
+  libcublas.so.10
+  libcublasLt.so.10
+  libcuda.so.1
+
+Model offload:
+  offloading 32 repeating layers to GPU
+  offloading output layer to GPU
+  offloaded 33/33 layers to GPU
+
+Observed model allocation:
+  CUDA0 model buffer size: 256.37 MiB
+  CUDA0 KV buffer size: 20.00 MiB
+  CUDA0 compute buffer size: 97.88 MiB
