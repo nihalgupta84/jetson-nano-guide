@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-02 — First successful local RAG test
+
+- Created an Open WebUI knowledge base and uploaded a PDF.
+- Verified local text extraction, chunking, embedding generation, vector retrieval, and document-grounded answers.
+- Confirmed Qwen2.5-0.5B-Instruct can answer using retrieved PDF context through the CUDA-enabled `llama-server` backend.
+- Recorded low-memory operating constraints and a gradual document-scaling plan for the 4 GB Nano.
+- Added validation questions and compatibility settings for reliable document chat.
+
 ## 2026-08-02 — Open WebUI and secure remote AI platform
 
 - Added verified Qwen2.5-0.5B and SmolLM2 CPU-versus-GPU benchmarks.
