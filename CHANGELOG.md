@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-04 — Verified multi-model switching
+
+- Added a configurable `llama-server` launcher driven by `/etc/jetson-ai/llama-server.env`.
+- Added the `switch-jetson-model` command with `qwen`, `smol`, and `status` modes.
+- Added health-check waiting, atomic configuration replacement, and automatic rollback to the previous model configuration.
+- Added a `systemd` service template that waits for `/data` and starts the selected model automatically.
+- Verified the complete switching sequence `Qwen -> SmolLM2 -> Qwen` with the service active and `/health` returning OK.
+- Documented Open WebUI model discovery, friendly presets, and the distinction between SmolLM2 and Arena Model.
+
 ## 2026-08-02 — First successful local RAG test
 
 - Created an Open WebUI knowledge base and uploaded a PDF.
