@@ -14,6 +14,7 @@ show_status() {
         # shellcheck disable=SC1090
         source "$CONFIG"
         echo "Configured model: ${MODEL_NAME:-unknown}"
+        echo "Display alias: ${MODEL_ALIAS:-unknown}"
         echo "Model path: ${MODEL_PATH:-unknown}"
     fi
 
@@ -29,10 +30,12 @@ show_status() {
 case "${1:-}" in
     qwen)
         MODEL_NAME=qwen
+        MODEL_ALIAS=Qwen
         MODEL_PATH=/data/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
         ;;
     smol)
         MODEL_NAME=smol
+        MODEL_ALIAS=SmolLM2
         MODEL_PATH=/data/models/SmolLM2-360M-Instruct-Q4_K_M.gguf
         ;;
     status)
@@ -56,6 +59,7 @@ fi
 
 cat >"${CONFIG}.new" <<EOF_CONFIG
 MODEL_NAME=$MODEL_NAME
+MODEL_ALIAS=$MODEL_ALIAS
 MODEL_PATH=$MODEL_PATH
 HOST=172.17.0.1
 PORT=8080
