@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a reproducible problem with the guide, scripts, services, or verified stack
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Remove all secrets, tokens, private URLs, and personal data from logs before submitting.
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: Jetson model and RAM size
+      placeholder: NVIDIA Jetson Nano Developer Kit, 4 GB
+    validations:
+      required: true
+  - type: input
+    id: software
+    attributes:
+      label: JetPack, L4T, and CUDA versions
+      placeholder: JetPack 4.6, L4T 32.6.1, CUDA 10.2.300
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: llama.cpp revision
+      placeholder: tag b5050, commit 23106f94e
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem description
+      description: Explain what happened and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include the exact commands in order.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized output or logs
+      description: Remove passwords, tokens, private domains, emails, and personal data.
+      render: text
+  - type: dropdown
+    id: reboot
+    attributes:
+      label: Reproduced after reboot?
+      options:
+        - "Yes"
+        - "No"
+        - "Not tested"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I removed all secrets and personal data.
+          required: true
+        - label: I am not uploading GGUF models or private backup archives.
+          required: true
