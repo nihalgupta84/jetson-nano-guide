@@ -17,6 +17,7 @@ show_status() {
         echo "Configured model: ${MODEL_NAME:-unknown}"
         echo "Display alias: ${MODEL_ALIAS:-unknown}"
         echo "Model path: ${MODEL_PATH:-unknown}"
+        echo "Context size: ${CTX_SIZE:-unknown}"
     else
         echo "Configuration missing: $CONFIG"
     fi
@@ -74,7 +75,7 @@ MODEL_ALIAS=$MODEL_ALIAS
 MODEL_PATH=$MODEL_PATH
 HOST=172.17.0.1
 PORT=8080
-CTX_SIZE=512
+CTX_SIZE=768
 THREADS=4
 GPU_LAYERS=99
 MAX_TOKENS=256
