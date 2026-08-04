@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an improvement to the documentation, scripts, benchmarks, or supported workflows
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Problem or need
+      description: What limitation or repeated manual task would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the commands, documentation, script, or workflow you propose.
+    validations:
+      required: true
+  - type: dropdown
+    id: tested
+    attributes:
+      label: Verification status
+      options:
+        - Tested on an original 4 GB Jetson Nano
+        - Tested on another Jetson device
+        - Not yet tested
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Compatibility and resource considerations
+      description: Note JetPack, CUDA, RAM, disk, ARM64, Docker, or security implications.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: This request does not require committing model binaries or private data.
+          required: true
+        - label: I searched existing issues and documentation.
+          required: true
