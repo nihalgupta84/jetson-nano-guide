@@ -1,0 +1,10 @@
+Jetson Nano AI Server Guide
+Copyright 2026 Nihal Gupta
+
+This product includes documentation and integration guidance for third-party
+open-source projects, including llama.cpp and Open WebUI. Those projects remain
+subject to their own licenses and are not relicensed by this repository.
+
+NVIDIA, Jetson, CUDA, and related names are trademarks of NVIDIA Corporation.
+Cloudflare is a trademark of Cloudflare, Inc. Product names are used only for
+identification and interoperability documentation.
