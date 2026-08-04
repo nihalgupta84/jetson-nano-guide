@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-05 — Deferred DGX container backend phase
+
+- Documented the future DGX integration as a container-only backend that does not depend on DGX-host sudo, host SSH, host Docker access, Tailscale, or published host ports.
+- Defined the target architecture: Jetson Open WebUI as the permanent authenticated frontend, vLLM inside `docker_14`, and an outbound SSH reverse tunnel from the container to the Jetson.
+- Recorded the confirmed container networks, A100 MIG profile, persistent `/workspace` storage, and available vLLM environments.
+- Added prerequisites, safety rules, process-supervision options, completion criteria, and explicit protection for the existing Local Medical AI service on DGX host port 8000.
+- Deferred implementation until the A100-backed training workload is complete and the container is free.
+
 ## 2026-08-05 — Unified Jetson AI management command
 
 - Added the `jetson-ai` command as a single control interface for the complete stack.
