@@ -1,0 +1,101 @@
+name: Repository quality checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: Shell scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+
+      - name: Check Bash syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t scripts < <(
+            find scripts -type f -print | sort
+          )
+
+          if (( ${#scripts[@]} == 0 )); then
+            echo "No scripts found."
+            exit 0
+          fi
+
+          for script in "${scripts[@]}"; do
+            echo "bash -n $script"
+            bash -n "$script"
+          done
+
+      - name: Run ShellCheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t scripts < <(
+            find scripts -type f -print | sort
+          )
+
+          if (( ${#scripts[@]} == 0 )); then
+            echo "No scripts found."
+            exit 0
+          fi
+
+          shellcheck --severity=warning "${scripts[@]}"
+
+  markdown:
+    name: Markdown documents
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: |
+            **/*.md
+            !.git/**
+
+  repository-safety:
+    name: Repository safety
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reject common secret and binary artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          forbidden_regex='(^|/)(id_rsa|id_ed25519|credentials\.json|config\.json|cert\.pem|key\.pem)$|\.(gguf|tar\.gz|zip|7z|pem|key)$'
+
+          violations="$(
+            git ls-files |
+              grep -E "$forbidden_regex" || true
+          )"
+
+          if [[ -n "$violations" ]]; then
+            echo "Forbidden sensitive or generated files are tracked:"
+            printf '%s\n' "$violations"
+            exit 1
+          fi
+
+          echo "No forbidden artifacts are tracked."
