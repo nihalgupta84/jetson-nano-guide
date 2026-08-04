@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-05 — Unified Jetson AI management command
+
+- Added the `jetson-ai` command as a single control interface for the complete stack.
+- Added consolidated service, container, model, endpoint, memory, storage, backup, and timer reporting.
+- Added health checks for llama.cpp, Open WebUI, Cloudflare, Docker, and the public endpoint.
+- Added model switching for Qwen, SmolLM2, and QwenCoder through the unified command.
+- Added storage inspection, live logs, manual backup execution, and full-stack restart commands.
+- Verified model switching from QwenCoder to Qwen, all endpoints returning OK, and Open WebUI requests completing successfully.
+
 ## 2026-08-05 — QwenCoder coding profile
 
 - Downloaded and verified `Qwen2.5-Coder-0.5B-Instruct-Q4_K_M.gguf` on the Jetson Nano.
