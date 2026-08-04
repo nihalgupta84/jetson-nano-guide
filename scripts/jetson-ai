@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LLAMA_HEALTH="http://172.17.0.1:8080/health"
+LLAMA_MODELS="http://172.17.0.1:8080/v1/models"
+WEBUI_HEALTH="http://127.0.0.1:3000/health"
+PUBLIC_URL="https://ai.nihalgupta.me"
+CONFIG="/etc/jetson-ai/llama-server.env"
+
+usage() {
+    cat <<'USAGE'
+Usage:
+  sudo jetson-ai status
+  sudo jetson-ai health
+  sudo jetson-ai model {qwen|smol|coder|status}
+  sudo jetson-ai backup
+  sudo jetson-ai logs [llama|webui|cloudflare|backup]
+  sudo jetson-ai storage
+  sudo jetson-ai restart
+USAGE
+}
+
+check_url() {
+    local name="$1"
+    local url="$2"
+
+    if curl -fsS --max-time 10 "$url" >/dev/null 2>&1; then
+        echo "[OK]   $name"
+        return 0
+    else
+        echo "[FAIL] $name"
+        return 1
+    fi
+}
+
+show_model() {
+    if [[ -r "$CONFIG" ]]; then
+        # shellcheck disable=SC1090
+        source "$CONFIG"
+        echo "Configured model : ${MODEL_NAME:-unknown}"
+        echo "Display alias    : ${MODEL_ALIAS:-unknown}"
+        echo "Model path       : ${MODEL_PATH:-unknown}"
+    else
+        echo "Model configuration not found: $CONFIG"
+    fi
+
+    if curl -fsS --max-time 5 "$LLAMA_MODELS" >/dev/null 2>&1; then
+        echo -n "API model        : "
+        curl -fsS --max-time 5 "$LLAMA_MODELS" |
+            sed -n 's/.*"id":"\([^"]*\)".*/\1/p'
+    fi
+}
+
+show_status() {
+    echo "========== SERVICES =========="
+    for service in llama-server cloudflared docker; do
+        printf "%-18s %s\n" "$service" "$(systemctl is-active "$service" 2>/dev/null || true)"
+    done
+
+    if docker inspect open-webui >/dev/null 2>&1; then
+        docker inspect open-webui \
+            --format 'open-webui        state={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restart={{.HostConfig.RestartPolicy.Name}}'
+    else
+        echo "open-webui        missing"
+    fi
+
+    echo
+    echo "========== ACTIVE MODEL =========="
+    show_model
+
+    echo
+    echo "========== ENDPOINTS =========="
+    check_url "llama-server" "$LLAMA_HEALTH" || true
+    check_url "Open WebUI" "$WEBUI_HEALTH" || true
+    check_url "Public endpoint" "$PUBLIC_URL" || true
+
+    echo
+    echo "========== MEMORY =========="
+    free -h
+
+    echo
+    echo "========== STORAGE =========="
+    df -h / /data
+
+    echo
+    echo "========== BACKUPS =========="
+    if [[ -d /data/backups/open-webui ]]; then
+        ls -lh /data/backups/open-webui
+    else
+        echo "Backup directory not found"
+    fi
+
+    echo
+    echo "========== NEXT BACKUP =========="
+    systemctl list-timers open-webui-backup.timer --all --no-pager 2>/dev/null || true
+}
+
+show_health() {
+    local failed=0
+
+    systemctl is-active --quiet llama-server || { echo "[FAIL] llama-server service"; failed=1; }
+    systemctl is-active --quiet cloudflared || { echo "[FAIL] cloudflared service"; failed=1; }
+    systemctl is-active --quiet docker || { echo "[FAIL] docker service"; failed=1; }
+
+    if docker inspect open-webui >/dev/null 2>&1; then
+        state="$(docker inspect -f '{{.State.Status}}' open-webui)"
+        health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' open-webui)"
+        [[ "$state" == "running" ]] || { echo "[FAIL] Open WebUI state=$state"; failed=1; }
+        [[ "$health" == "healthy" ]] || { echo "[FAIL] Open WebUI health=$health"; failed=1; }
+    else
+        echo "[FAIL] Open WebUI container missing"
+        failed=1
+    fi
+
+    check_url "llama-server endpoint" "$LLAMA_HEALTH" || failed=1
+    check_url "Open WebUI endpoint" "$WEBUI_HEALTH" || failed=1
+    check_url "Public endpoint" "$PUBLIC_URL" || failed=1
+
+    if (( failed == 0 )); then
+        echo
+        echo "Jetson AI stack is healthy."
+    else
+        echo
+        echo "One or more checks failed."
+    fi
+
+    return "$failed"
+}
+
+case "${1:-}" in
+    status)
+        show_status
+        ;;
+    health)
+        show_health
+        ;;
+    model)
+        case "${2:-}" in
+            qwen|smol|coder|status)
+                /usr/local/sbin/switch-jetson-model "$2"
+                ;;
+            *)
+                echo "Usage: sudo jetson-ai model {qwen|smol|coder|status}"
+                exit 2
+                ;;
+        esac
+        ;;
+    backup)
+        systemctl start open-webui-backup.service
+        systemctl status open-webui-backup.service --no-pager
+        ;;
+    logs)
+        case "${2:-llama}" in
+            llama) journalctl -u llama-server -f ;;
+            webui) docker logs -f open-webui ;;
+            cloudflare) journalctl -u cloudflared -f ;;
+            backup) journalctl -u open-webui-backup.service -n 100 --no-pager ;;
+            *)
+                echo "Usage: sudo jetson-ai logs [llama|webui|cloudflare|backup]"
+                exit 2
+                ;;
+        esac
+        ;;
+    storage)
+        echo "========== FILESYSTEMS =========="
+        df -h / /data
+        echo
+        echo "========== DOCKER =========="
+        docker system df
+        echo
+        echo "========== MODELS =========="
+        du -sh /data/models/* 2>/dev/null | sort -h
+        echo
+        echo "========== OPEN WEBUI =========="
+        docker exec open-webui sh -lc \
+            'du -sh /app/backend/data /app/backend/data/cache/embedding /app/backend/data/vector_db 2>/dev/null'
+        ;;
+    restart)
+        echo "Restarting llama-server..."
+        systemctl restart llama-server
+        echo "Restarting Open WebUI..."
+        docker restart open-webui >/dev/null
+        echo "Restarting cloudflared..."
+        systemctl restart cloudflared
+        echo "Waiting for services..."
+        sleep 10
+        show_health
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
