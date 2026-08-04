@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/nihalgupta84/jetson-nano-guide/security/advisories/new
+    about: Privately report credentials exposure, authentication bypasses, or other security vulnerabilities.
+  - name: Documentation
+    url: https://github.com/nihalgupta84/jetson-nano-guide#documentation
+    about: Review the installation, recovery, troubleshooting, and operations guides before opening an issue.
