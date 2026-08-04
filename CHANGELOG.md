@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-05 — QwenCoder coding profile
+
+- Downloaded and verified `Qwen2.5-Coder-0.5B-Instruct-Q4_K_M.gguf` on the Jetson Nano.
+- Confirmed CUDA detection on the Tegra X1 and complete `25/25` layer GPU offload.
+- Verified typed Python code generation with the direct `llama-cli` test.
+- Added the `coder` profile to `switch-jetson-model` with the friendly API alias `QwenCoder`.
+- Verified `Service: active`, `Health: OK`, and `/v1/models` returning `QwenCoder`.
+- Documented Open WebUI use and the practical limits of a 0.5B coding model.
+
 ## 2026-08-04 — Verified multi-model switching
 
 - Added a configurable `llama-server` launcher driven by `/etc/jetson-ai/llama-server.env`.
