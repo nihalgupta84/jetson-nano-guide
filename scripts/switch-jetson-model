@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG=/etc/jetson-ai/llama-server.env
+CONFIG="/etc/jetson-ai/llama-server.env"
 BACKUP="${CONFIG}.previous"
-HEALTH_URL=http://172.17.0.1:8080/health
+HEALTH_URL="http://172.17.0.1:8080/health"
+MODELS_URL="http://172.17.0.1:8080/v1/models"
 
 usage() {
-    echo "Usage: sudo switch-jetson-model {qwen|smol|status}"
+    echo "Usage: sudo switch-jetson-model {qwen|smol|coder|status}"
 }
 
 show_status() {
@@ -16,27 +17,37 @@ show_status() {
         echo "Configured model: ${MODEL_NAME:-unknown}"
         echo "Display alias: ${MODEL_ALIAS:-unknown}"
         echo "Model path: ${MODEL_PATH:-unknown}"
+    else
+        echo "Configuration missing: $CONFIG"
     fi
 
-    systemctl is-active llama-server || true
+    echo "Service: $(systemctl is-active llama-server || true)"
 
     if curl -fsS --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
         echo "Health: OK"
+        echo -n "API model: "
+        curl -fsS --max-time 5 "$MODELS_URL" |
+            sed -n 's/.*"id":"\([^"]*\)".*/\1/p'
     else
-        echo "Health: unavailable"
+        echo "Health: unavailable or model still loading"
     fi
 }
 
 case "${1:-}" in
     qwen)
-        MODEL_NAME=qwen
-        MODEL_ALIAS=Qwen
-        MODEL_PATH=/data/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+        MODEL_NAME="qwen"
+        MODEL_ALIAS="Qwen"
+        MODEL_PATH="/data/models/qwen2.5-0.5b-instruct-q4_k_m.gguf"
         ;;
     smol)
-        MODEL_NAME=smol
-        MODEL_ALIAS=SmolLM2
-        MODEL_PATH=/data/models/SmolLM2-360M-Instruct-Q4_K_M.gguf
+        MODEL_NAME="smol"
+        MODEL_ALIAS="SmolLM2"
+        MODEL_PATH="/data/models/SmolLM2-360M-Instruct-Q4_K_M.gguf"
+        ;;
+    coder)
+        MODEL_NAME="coder"
+        MODEL_ALIAS="QwenCoder"
+        MODEL_PATH="/data/models/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf"
         ;;
     status)
         show_status
@@ -72,18 +83,22 @@ EOF_CONFIG
 mv "${CONFIG}.new" "$CONFIG"
 chmod 644 "$CONFIG"
 
-echo "Switching to: $MODEL_NAME"
+echo "Switching to: $MODEL_ALIAS"
 systemctl restart llama-server
 
 for attempt in $(seq 1 90); do
     if curl -fsS --max-time 3 "$HEALTH_URL" >/dev/null 2>&1; then
-        echo "Model is ready: $MODEL_NAME"
+        echo
+        echo "Model is ready: $MODEL_ALIAS"
         show_status
         exit 0
     fi
+
+    printf '.'
     sleep 2
 done
 
+echo
 echo "New model failed its health check." >&2
 
 if [[ -f "$BACKUP" ]]; then
