@@ -12,7 +12,7 @@ fi
 source "$CONFIG"
 
 required_vars=(
-    MODEL_NAME MODEL_PATH HOST PORT
+    MODEL_NAME MODEL_ALIAS MODEL_PATH HOST PORT
     CTX_SIZE THREADS GPU_LAYERS MAX_TOKENS
 )
 
@@ -29,10 +29,12 @@ if [[ ! -f "$MODEL_PATH" ]]; then
 fi
 
 echo "Starting model: $MODEL_NAME"
+echo "Display alias: $MODEL_ALIAS"
 echo "Model path: $MODEL_PATH"
 
 exec /data/llama.cpp/build-nano/bin/llama-server \
     -m "$MODEL_PATH" \
+    --alias "$MODEL_ALIAS" \
     -ngl "$GPU_LAYERS" \
     -c "$CTX_SIZE" \
     -t "$THREADS" \
