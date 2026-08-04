@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG=/etc/jetson-ai/llama-server.env
+BACKUP="${CONFIG}.previous"
+HEALTH_URL=http://172.17.0.1:8080/health
+
+usage() {
+    echo "Usage: sudo switch-jetson-model {qwen|smol|status}"
+}
+
+show_status() {
+    if [[ -r "$CONFIG" ]]; then
+        # shellcheck disable=SC1090
+        source "$CONFIG"
+        echo "Configured model: ${MODEL_NAME:-unknown}"
+        echo "Model path: ${MODEL_PATH:-unknown}"
+    fi
+
+    systemctl is-active llama-server || true
+
+    if curl -fsS --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
+        echo "Health: OK"
+    else
+        echo "Health: unavailable"
+    fi
+}
+
+case "${1:-}" in
+    qwen)
+        MODEL_NAME=qwen
+        MODEL_PATH=/data/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+        ;;
+    smol)
+        MODEL_NAME=smol
+        MODEL_PATH=/data/models/SmolLM2-360M-Instruct-Q4_K_M.gguf
+        ;;
+    status)
+        show_status
+        exit 0
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
+
+if [[ ! -f "$MODEL_PATH" ]]; then
+    echo "Model file not found: $MODEL_PATH" >&2
+    exit 1
+fi
+
+if [[ -f "$CONFIG" ]]; then
+    cp -a "$CONFIG" "$BACKUP"
+fi
+
+cat >"${CONFIG}.new" <<EOF_CONFIG
+MODEL_NAME=$MODEL_NAME
+MODEL_PATH=$MODEL_PATH
+HOST=172.17.0.1
+PORT=8080
+CTX_SIZE=512
+THREADS=4
+GPU_LAYERS=99
+MAX_TOKENS=256
+EOF_CONFIG
+
+mv "${CONFIG}.new" "$CONFIG"
+chmod 644 "$CONFIG"
+
+echo "Switching to: $MODEL_NAME"
+systemctl restart llama-server
+
+for attempt in $(seq 1 90); do
+    if curl -fsS --max-time 3 "$HEALTH_URL" >/dev/null 2>&1; then
+        echo "Model is ready: $MODEL_NAME"
+        show_status
+        exit 0
+    fi
+    sleep 2
+done
+
+echo "New model failed its health check." >&2
+
+if [[ -f "$BACKUP" ]]; then
+    echo "Restoring previous configuration." >&2
+    cp -a "$BACKUP" "$CONFIG"
+    systemctl restart llama-server
+fi
+
+exit 1
